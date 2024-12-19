@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Measure BB Yes/No</title>
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&family=Source+Serif+4:ital,opsz,wght@0,8..60,200..900;1,8..60,200..900&display=swap"
+        rel="stylesheet">
+    <link href="https://api.mapbox.com/mapbox-gl-js/v3.6.0/mapbox-gl.css" rel="stylesheet">
+    <script src="https://api.mapbox.com/mapbox-gl-js/v3.6.0/mapbox-gl.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: "Source Serif 4", serif;
+            font-optical-sizing: auto;
+        }
+
+        #map {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 100%;
+        }
+
+        .mapboxgl-popup {
+            max-width: 300px;
+            font: 12px/20px 'Helvetica Neue', Arial, Helvetica, sans-serif;
+            color: rgb(42, 91, 165);
+        }
+
+        p {
+            line-height: 12px;
+            font-weight: 400;
+            font-family: "Source Serif 4", serif;
+            font-optical-sizing: auto;
+        }
+
+        .voteTotals {
+            font-size: 16px;
+            font-weight: 600;
+            margin-left: -4px;
+        }
+
+
+        #map-title {
+            position: relative;
+            top: 0px;
+            margin-left: 64px;
+            background: white;
+            padding: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            z-index: 1;
+            color: rgb(42, 91, 165);
+        }
+
+        #candidate-toggle {
+            position: absolute;
+            top: 80px;
+            margin-left: 64px;
+            z-index: 10;
+            background: white;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            display: flex;
+            gap: 10px;
+        }
+
+        .toggle-button {
+            background-color: #f0f0f0;
+            border: 1px solid #ccc;
+            padding: 5px 10px;
+            font-size: 14px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        .toggle-button.active {
+            background-color: #FF5733;
+            color: white;
+            border-color: #0056b3;
+        }
+
+
+
+        .mapboxgl-popup {
+
+            max-width: 230px;
+            font:
+                12px/20px "Source Serif 4",
+                Arial,
+                Helvetica,
+                sans-serif;
+        }
+
+        .voteTotals {
+
+            font-weight: 600;
+            margin-left: 0;
+        }
+
+        #map-legend {
+            position: absolute;
+            bottom: 26px;
+            left: 10px;
+            background: white;
+            padding: 6px;
+            font-size: 14px;
+            z-index: 1;
+            border-radius: 5px;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+        }
+
+        #legend-gradient {
+            height: 20px;
+            width: 200px;
+            background: linear-gradient(to right, #ffffff, #DAF7A6, #FFC300, #FF5733, #C70039, #900C3F);
+            border: 1px solid #ccc;
+            margin-bottom: 5px;
+        }
+
+        #legend-labels {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        #legend-labels span {
+            font-size: 12px;
+            color: #555;
+        }
+
+        #legend-title {
+            margin: 4px;
+
+        }
+
+        #map-subtitle {
+            top: -14px;
+            position: relative;
+            background: rgba(255, 255, 255, 1.0);
+            margin-left: 64px;
+            padding: 10px;
+            font-size: 18px;
+            font-weight: 400;
+            z-index: 1;
+            color: rgb(42, 91, 165);
+
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="map-title">Measure BB Results (Yes/No)</div>
+    <div id="map-subtitle"> Click on a precinct to see the percentage and total votes</div>
+    <div id="candidate-toggle">
+        <button id="candidate-0" class="toggle-button active">YES</button>
+        <button id="candidate-1" class="toggle-button">NO</button>
+    </div>
+    <div id="map-legend">
+        <h4 id="legend-title"> % of Yes votes in precinct</h4>
+        <div id="legend-gradient"></div>
+        <div id="legend-labels">
+            <span>0%</span>
+            <span>20%</span>
+            <span>40%</span>
+            <span>60%</span>
+            <span>80%</span>
+            <span>100%</span>
+        </div>
+    </div>
+
+
+    <div id="map"></div>
+
+
+    <script>
+        mapboxgl.accessToken = 'pk.eyJ1IjoiY2l0eXNpZGUiLCJhIjoiY2tqeGR4YWl0MDNldjJ3azc1amxvMHoxcSJ9.G05TaDWIiOWXtu0Qwlk-Aw';
+        const map = new mapboxgl.Map({
+            container: 'map', // container ID
+            style: 'mapbox://styles/mapbox/dark-v10',
+            center: [-122.270691, 37.875834], // starting position [lng, lat]. Note that lat must be set between -90 and 90
+            zoom: 12.5,// starting zoom
+            maxZoom: 16, // maximum zoom level (example)
+            minZoom: 10, // minimum zoom level (example)
+            attributionControl: false // Disable default attribution
+        });
+
+        map.addControl(new mapboxgl.NavigationControl(), 'top-left'); // Adds controls to the top-left corner
+
+        map.addControl(new mapboxgl.AttributionControl({
+            customAttribution: 'Data provided by Alameda County Registrar and Darrell Owens'
+
+        }), 'bottom-right');
+
+        map.addControl(new mapboxgl.FullscreenControl({ container: document.querySelector('body') }));
+
+        let activeCandidate = 'candidate_per_0'; // Default to Candidate 1
+        const candidateColors = {
+            candidate_per_0: [
+                'interpolate',
+                ['linear'],
+                ['to-number', ['get', 'candidate_per_0']], // Convert string to number
+                0, '#ffffff',  //   
+                20, '#DAF7A6',
+                40, '#FFC300',
+                60, '#FF5733',
+                80, '#C70039',
+                100, '#900C3F' //   
+            ],
+            candidate_per_1: [
+                'interpolate',
+                ['linear'],
+                ['to-number', ['get', 'candidate_per_1']], // Convert string to number
+                0, '#ffffff',  //   
+                20, '#DAF7A6',
+                40, '#FFC300',
+                60, '#FF5733',
+                80, '#C70039',
+                100, '#900C3F' //  
+            ]
+        };
+
+
+
+        map.on('load', () => {
+
+            console.log("Base Map Loaded")
+
+
+
+            map.addSource('precincts', {
+                type: 'geojson',
+                data: 'https://cityside-geojson.s3.us-west-1.amazonaws.com/nov24_elect_131.geojson'
+            });
+
+            map.addLayer({
+                id: 'precincts-layer',
+                type: 'fill',
+                source: 'precincts',
+                paint: {
+                    'fill-color': candidateColors['candidate_per_0'], // Default to Candidate 1
+                    'fill-opacity': 0.6,
+                    'fill-outline-color': '#ffffff'
+                }
+            });
+
+            // Update popup to reflect the selected candidate
+            map.on('click', 'precincts-layer', (e) => {
+                const properties = e.features[0].properties;
+                const candidatePercent = properties[activeCandidate];
+                const candidateName = activeCandidate === 'candidate_per_0' ? properties.candidate_name_0 : properties.candidate_name_1;
+                const candidateVotes = activeCandidate === 'candidate_per_0' ? properties.candidate_0 : properties.candidate_1;
+
+                const description = `
+                <div style="padding: 10px;">
+                <h2>${candidateName}: ${candidatePercent}%</h2>
+                <p class="voteTotals">${candidateName} votes: ${candidateVotes.toLocaleString('en-US')}</h2>
+                <p class="voteTotals">Total Votes: ${properties.total_votes.toLocaleString('en-US')}</p>
+                
+            </div>`;
+
+                new mapboxgl.Popup()
+                    .setLngLat(e.lngLat)
+                    .setHTML(description)
+                    .addTo(map);
+            });
+
+            // Change the cursor to a pointer when over the precincts layer
+            map.on('mouseenter', 'precincts-layer', () => {
+                map.getCanvas().style.cursor = 'pointer';
+            });
+
+            // Reset the cursor when it leaves the precincts layer
+            map.on('mouseleave', 'precincts-layer', () => {
+                map.getCanvas().style.cursor = '';
+            });
+
+
+        }); //end map load
+
+
+        function updateMapLayer() {
+            map.setPaintProperty('precincts-layer', 'fill-color', candidateColors[activeCandidate]);
+        }
+
+        function updateLegendTitle() {
+            const legendTitle = document.getElementById('legend-title');
+            legendTitle.innerText = activeCandidate === 'candidate_per_0'
+                ? '% of Yes votes in precinct'
+                : '% of No votes in precinct';
+        }
+
+
+        function interpolateColor(percent) {
+            // Define your breakpoints and colors
+            const colors = [
+                { percent: 0, color: [255, 0, 0] },    // Red
+                { percent: 50, color: [255, 255, 0] }, // Yellow
+                { percent: 100, color: [0, 255, 0] }   // Green
+            ];
+
+            // Find the two colors the percentage falls between
+            let lower = colors[0];
+            let upper = colors[colors.length - 1];
+
+            for (let i = 0; i < colors.length - 1; i++) {
+                if (percent >= colors[i].percent && percent <= colors[i + 1].percent) {
+                    lower = colors[i];
+                    upper = colors[i + 1];
+                    break;
+                }
+            }
+
+            // Interpolate between the two colors
+            const range = upper.percent - lower.percent;
+            const weight = (percent - lower.percent) / range;
+
+            const interpolated = lower.color.map((c, i) => Math.round(c + weight * (upper.color[i] - c)));
+
+            // Convert to hex
+            return `rgb(${interpolated[0]}, ${interpolated[1]}, ${interpolated[2]})`;
+        }
+
+        // Event listener for toggle buttons
+        document.getElementById('candidate-0').addEventListener('click', () => {
+            activeCandidate = 'candidate_per_0';
+            updateMapLayer();
+            updateLegendTitle();
+            document.getElementById('candidate-0').classList.add('active');
+            document.getElementById('candidate-1').classList.remove('active');
+        });
+
+        document.getElementById('candidate-1').addEventListener('click', () => {
+            activeCandidate = 'candidate_per_1';
+            updateMapLayer();
+            updateLegendTitle();
+            document.getElementById('candidate-1').classList.add('active');
+            document.getElementById('candidate-0').classList.remove('active');
+        });
+
+    </script>
+
+</body>
+
+</html>

@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>CA State Senate 7th District</title>
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&family=Source+Serif+4:ital,opsz,wght@0,8..60,200..900;1,8..60,200..900&display=swap"
+        rel="stylesheet">
+    <link href="https://api.mapbox.com/mapbox-gl-js/v3.6.0/mapbox-gl.css" rel="stylesheet">
+    <script src="https://api.mapbox.com/mapbox-gl-js/v3.6.0/mapbox-gl.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: "Source Serif 4", serif;
+            font-optical-sizing: auto;
+        }
+
+        #map {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 100%;
+        }
+
+        .mapboxgl-popup {
+            max-width: 300px;
+            font: 12px/20px 'Helvetica Neue', Arial, Helvetica, sans-serif;
+            color: rgb(42, 91, 165);
+        }
+
+        p {
+            line-height: 12px;
+            font-weight: 400;
+            font-family: "Source Serif 4", serif;
+            font-optical-sizing: auto;
+        }
+
+        .voteTotals {
+            font-size: 16px;
+            font-weight: 600;
+            margin-left: -4px;
+        }
+
+
+        #map-title {
+            position: relative;
+            top: 0px !important;
+            margin-left: 64px;
+            background: white;
+            padding: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            z-index: 1;
+            color: rgb(42, 91, 165);
+        }
+
+        #candidate-toggle {
+            position: absolute;
+            bottom: 130px;
+            margin-left: 10px;
+            z-index: 10;
+            background: white;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            display: flex;
+            gap: 10px;
+        }
+
+        .toggle-button {
+            background-color: #f0f0f0;
+            border: 1px solid #ccc;
+            padding: 5px 10px;
+            font-size: 14px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        .toggle-button.active {
+            background-color: #FF5733;
+            color: white;
+            border-color: #0056b3;
+        }
+
+
+
+        .mapboxgl-popup {
+
+            max-width: 230px;
+            font:
+                12px/20px "Source Serif 4",
+                Arial,
+                Helvetica,
+                sans-serif;
+        }
+
+        .voteTotals {
+
+            font-weight: 600;
+            margin-left: 0;
+        }
+
+        #map-legend {
+            position: absolute;
+            bottom: 36px;
+            left: 10px;
+            background: white;
+            padding: 6px;
+            font-size: 14px;
+            z-index: 1;
+            border-radius: 5px;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+        }
+
+        #legend-gradient {
+            height: 20px;
+            width: 200px;
+            background: linear-gradient(to right, #ffffff, #b3ffec, #00cc99, #00664d, #003326, #001a13);
+            border: 1px solid #ccc;
+            margin-bottom: 5px;
+        }
+
+        #legend-labels {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        #legend-labels span {
+            font-size: 12px;
+            color: #555;
+        }
+
+        #legend-title {
+            margin: 4px;
+
+        }
+
+        #map-subtitle {
+            top: -10px;
+            position: relative;
+            background: rgba(255, 255, 255, 1.0);
+            margin-left: 64px;
+            padding: 10px;
+            font-size: 18px;
+            font-weight: 400;
+            z-index: 1;
+            color: rgb(42, 91, 165);
+
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="map-title">How Berkeley mayoral candidates performed in each neighborhood
+    </div>
+    <div id="map-subtitle">Toggle to see results by candidate. Click on a precinct to see vote percentage and totals. </div>
+    <div id="candidate-toggle">
+        <button id="candidate-0" class="toggle-button active">Ishii</button>
+        <button id="candidate-1" class="toggle-button">Hahn</button>
+        <button id="candidate-2" class="toggle-button">Harrison</button>
+    </div>
+    <div id="map-legend">
+        <h4 id="legend-title"> % of votes in precinct</h4>
+        <div id="legend-gradient"></div>
+        <div id="legend-labels">
+            <span>0%</span>
+            <span>20%</span>
+            <span>40%</span>
+            <span>60%</span>
+            <span>80%</span>
+            <span>100%</span>
+        </div>
+    </div>
+
+
+    <div id="map"></div>
+
+
+    <script>
+        mapboxgl.accessToken = 'pk.eyJ1IjoiY2l0eXNpZGUiLCJhIjoiY2tqeGR4YWl0MDNldjJ3azc1amxvMHoxcSJ9.G05TaDWIiOWXtu0Qwlk-Aw';
+        const map = new mapboxgl.Map({
+            container: 'map', // container ID
+            style: 'mapbox://styles/mapbox/dark-v10',
+            center: [-122.270691, 37.878], // starting position [lng, lat]. Note that lat must be set between -90 and 90
+            zoom: 12.5,// starting zoom
+            maxZoom: 16, // maximum zoom level (example)
+            minZoom: 10, // minimum zoom level (example)
+            attributionControl: false // Disable default attribution
+        });
+
+        map.addControl(new mapboxgl.NavigationControl(), 'top-left'); // Adds controls to the top-left corner
+
+        map.addControl(new mapboxgl.AttributionControl({
+            customAttribution: 'Data provided by Alameda County Registrar and Darrell Owens'
+
+        }), 'bottom-right');
+
+        map.addControl(new mapboxgl.FullscreenControl({ container: document.querySelector('body') }));
+
+        let activeCandidate = 'candidate_per_0'; // Default to Candidate 1
+        const candidateColors = {
+            candidate_per_0: [
+                'interpolate',
+                ['linear'],
+                ['to-number', ['get', 'candidate_per_0']], // Convert string to number
+                0, '#ffffff',  //   
+                20, '#b3ffec',
+                40, '#00cc99',
+                60, '#00664d',
+                80, '#003326',
+                100, '#001a13' //   
+            ],
+            candidate_per_1: [
+                'interpolate',
+                ['linear'],
+                ['to-number', ['get', 'candidate_per_1']], // Convert string to number
+                0, '#ffffff',  //   
+                20, '#ffe6f2',
+                40, '#ff99cc',
+                60, '#ff0080',
+                80, '#800040',
+                100, '#33001a' //  
+            ],
+            candidate_per_2: [
+
+                'interpolate',
+                ['linear'],
+                ['to-number', ['get', 'candidate_per_2']], // Convert string to number
+                0, '#ffffff',  //   
+                20, '#ffebcc',
+                40, '#ffad33',
+                60, '#cc7a00',
+                80, '#804d00',
+                100, '#331f00' // 
+            ]
+
+        };
+
+
+
+        map.on('load', () => {
+
+            console.log("Base Map Loaded")
+
+
+
+            map.addSource('precincts', {
+                type: 'geojson',
+                data: 'https://cityside-geojson.s3.us-west-1.amazonaws.com/berkeley-mayor-24.geojson'
+            });
+
+            map.addLayer({
+                id: 'precincts-layer',
+                type: 'fill',
+                source: 'precincts',
+                paint: {
+                    'fill-color': candidateColors['candidate_per_0'], // Default to Candidate 1
+                    'fill-opacity': 0.6,
+                    'fill-outline-color': '#ffffff'
+                }
+            });
+
+            // Update popup to reflect the selected candidate
+            map.on('click', 'precincts-layer', (e) => {
+                const properties = e.features[0].properties;
+                const candidatePercent = properties[activeCandidate];
+                let candidateName = ''
+
+                if (activeCandidate === 'candidate_per_0'){
+                    candidateName = 'Adena Ishii'
+
+                } else if (activeCandidate === 'candidate_per_1'){
+
+                    candidateName = 'Sophie Hanh'
+                } else if (activeCandidate === 'candidate_per_2'){
+                    candidateName = 'Kate Harrison'
+
+                }
+
+               // let candidateName = activeCandidate === 'candidate_per_0' ? properties.candidate_name_0 : properties.candidate_name_1;
+                const candidateVotes = activeCandidate === 'candidate_per_0' ? properties.candidate_0 : properties.candidate_1;
+                //candidateName = cleanName(candidateName);
+                const description = `
+                <div style="padding: 10px;">
+                <h2>${candidateName}: ${parseInt(candidatePercent)}%</h2>
+                <p class="voteTotals">Votes: ${candidateVotes.toLocaleString('en-US')}</h2>
+                <p class="voteTotals">Total votes: ${parseInt(properties.total_votes).toLocaleString('en-US')}</p>
+                
+            </div>`;
+
+                new mapboxgl.Popup()
+                    .setLngLat(e.lngLat)
+                    .setHTML(description)
+                    .addTo(map);
+            });
+
+            // Change the cursor to a pointer when over the precincts layer
+            map.on('mouseenter', 'precincts-layer', () => {
+                map.getCanvas().style.cursor = 'pointer';
+            });
+
+            // Reset the cursor when it leaves the precincts layer
+            map.on('mouseleave', 'precincts-layer', () => {
+                map.getCanvas().style.cursor = '';
+            });
+
+
+        }); //end map load
+
+        function cleanName(name) {
+            name = name.split('-')
+            name = name[1].split(' ')
+            return name[2]
+
+        }
+
+
+        function updateMapLayer() {
+            map.setPaintProperty('precincts-layer', 'fill-color', candidateColors[activeCandidate]);
+        }
+
+        function updateLegendTitle() {
+            const legendTitle = document.getElementById('legend-title');
+            legendTitle.innerText = activeCandidate === 'candidate_per_0'
+                ? '% of  votes in precinct'
+                : '% of  votes in precinct';
+        }
+
+        function updateLegendGrandient() {
+
+            const legendTitle = document.getElementById('legend-gradient');
+
+            if (activeCandidate === 'candidate_per_0') {
+                legendTitle.style.background = 'linear-gradient(to right, #ffffff, #b3ffec, #00cc99, #00664d, #003326, #001a13)'
+            } else if (activeCandidate === 'candidate_per_1') {
+                legendTitle.style.background = 'linear-gradient(to right, #ffffff, #ffe6f2, #ff99cc, #ff0080, #800040, #33001a)'
+            } else if (activeCandidate === 'candidate_per_2') {
+
+                legendTitle.style.background = 'linear-gradient(to right, #ffffff, #ffebcc, #ffad33, #cc7a00, #804d00, #331f00)'
+            }
+
+        }
+
+
+        // Event listener for toggle buttons
+        document.getElementById('candidate-0').addEventListener('click', () => {
+            activeCandidate = 'candidate_per_0';
+            updateMapLayer();
+            //updateLegendTitle();
+            updateLegendGrandient();
+            document.getElementById('candidate-0').classList.add('active');
+            document.getElementById('candidate-1').classList.remove('active');
+            document.getElementById('candidate-2').classList.remove('active');
+        });
+
+        document.getElementById('candidate-1').addEventListener('click', () => {
+            activeCandidate = 'candidate_per_1';
+            updateMapLayer();
+           // updateLegendTitle();
+            updateLegendGrandient();
+            document.getElementById('candidate-1').classList.add('active');
+            document.getElementById('candidate-0').classList.remove('active');
+            document.getElementById('candidate-2').classList.remove('active');
+        });
+
+        document.getElementById('candidate-2').addEventListener('click', () => {
+            activeCandidate = 'candidate_per_2';
+            updateMapLayer();
+            //updateLegendTitle();
+            updateLegendGrandient();
+            document.getElementById('candidate-2').classList.add('active');
+            document.getElementById('candidate-0').classList.remove('active');
+            document.getElementById('candidate-1').classList.remove('active');
+        });
+
+
+    </script>
+
+</body>
+
+</html>
